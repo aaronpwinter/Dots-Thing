@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Dots thing</title>
+        <style type="text/css">
+            body
+            {
+                margin: 0px;
+                background-color: #ffffff;
+                overflow: hidden;
+            }
+            .outer
+            {
+                height: 100%;
+                position: absolute;
+                margin: 0px;
+                width: 100%;
+            }
+            .dot-image
+            {
+                margin: 0px;
+                background-color: #000000;
+                height: 100%;
+                width: 33%;
+                display:inline-block;
+                user-select: none;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class='outer'>
+            <div class='dot-image' id="dot-image1"></div>
+            <div class='dot-image' id="dot-image2"></div>
+            <div class='dot-image' id="dot-image3"></div>
+        </div>
+
+        <script src="dotted-images.js"></script>
+        <script>
+            new DottedImage('dot-image1', 'pusheen.png')
+            new DottedImage('dot-image2', 'scren save1.png', {color: '#eeeeee'})
+            new DottedImage('dot-image3', 'setting_cog.png')
+        </script>
+    </body>
+</html>

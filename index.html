@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Dots thing</title>
+        <style type="text/css">
+            body
+            {
+                margin: 0px;
+                background-color: #ffffff;
+                overflow: hidden;
+            }
+            #dot-image
+            {
+                margin: 0px;
+                background-color: #000000;
+                height: 100%;
+                width: 100%;
+                position:absolute;
+            }
+            #settings
+            {
+                position: absolute;
+                opacity: 0;
+                width: auto;
+                /*background-color: red;*/
+            }
+            #box::before
+            {
+                content: "";
+                float: left;
+                padding-top: 100%;
+            }
+            #settings:hover
+            {
+                opacity: 1;
+                -webkit-transition: all .3s ease-in-out;
+                -moz-transition: all .5s ease-in-out;
+                -o-transition: all .5s ease-in-out;
+                transition: all .5s ease-in-out;
+            }
+            #settings>input
+            {
+                width: 10%;
+                user-select: none;
+            }
+            #settings-ul1
+            {
+                opacity: 1;
+                background-color: gray;
+                border-radius: 10px;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div id="dot-image"></div>
+        <div id="settings">
+            <input type="image" src="setting_cog.png" draggable="false" onclick="settingsClick()">
+            <div id="settings-ul1">
+                <ul>
+                    <li>Max #of Dots (1-5000)<input type="range" id="max_dots" name="dots" min="1" max="5000"></li>
+                    <li><div id="mspt-text">MSPT</div><input type="range" id="mspt" name="mspt" min="1" max="100"></li>
+                    <li><input type="color" id="bg_color" name="color"></li>
+                    <li><input type="file" accept="image/png, image/jpeg" id="fileToLoad"></li>
+                </ul>
+            </div>
+        </div>
+
+        <script src="dotted-images.js"></script>
+        <script src="main-web.js"></script>
+    </body>
+</html>
