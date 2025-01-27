@@ -24,11 +24,12 @@ function Dot(location, home = null, radius = DOTRADIUS, color = DOTCOLOR)
 
 /**
  * Draws the dot onto a context.
+ * @param {number} radiusMod A value to multiply to the radius of the dot (make bigger/smaller)
  */
-Dot.prototype.draw = function(context)
+Dot.prototype.draw = function(context, radiusMod = 1.0)
 {
     context.beginPath()
-    context.arc(this._loc[0], this._loc[1], this._r, 0, 2*Math.PI)
+    context.arc(this._loc[0], this._loc[1], this._r*radiusMod, 0, 2*Math.PI)
     let originalColor = context.fillStyle
     context.fillStyle = this._color
     context.fill()
@@ -154,8 +155,13 @@ const DEFAULT_SETTINGS = {
     clickIntensity: 1_000_000,
     runIntensity: 100_000,
     color: '#000000',
+    useImageTopLeftAsBackground: true,
     maxDots: 500,
-    mspt: 25
+    mspt: 25,
+    radiusMod: 1.0,
+    squishMod: 1.0,
+    xMod: 0.0,
+    yMod: 0.0
 }
 
 /**
@@ -165,7 +171,7 @@ const DEFAULT_SETTINGS = {
  * @param {object} defaults The default settings object
  * @returns The correct setting
  */
-function assignDefualt(property, settings, defaults)
+function assignDefault(property, settings, defaults)
 {
     return settings.hasOwnProperty(property) ? settings[property] : defaults[property]
 }
@@ -189,11 +195,16 @@ function DottedImage(elementID, imgLink, settings = {})
     this._hasAddedAllDots = false
 
     //Settings
-    this._clickIntensity = assignDefualt('clickIntensity', settings, DEFAULT_SETTINGS)
-    this._runIntensity = assignDefualt('runIntensity', settings, DEFAULT_SETTINGS)
-    this._color = assignDefualt('color', settings, DEFAULT_SETTINGS)
-    this._maxDots = assignDefualt('maxDots', settings, DEFAULT_SETTINGS)
-    this._mspt = assignDefualt('mspt', settings, DEFAULT_SETTINGS) //MS per tick
+    this._clickIntensity = assignDefault('clickIntensity', settings, DEFAULT_SETTINGS)
+    this._runIntensity = assignDefault('runIntensity', settings, DEFAULT_SETTINGS)
+    this._color = assignDefault('color', settings, DEFAULT_SETTINGS)
+    this._useImageTopLeftAsBackground = assignDefault('useImageTopLeftAsBackground', settings, DEFAULT_SETTINGS)
+    this._maxDots = assignDefault('maxDots', settings, DEFAULT_SETTINGS)
+    this._mspt = assignDefault('mspt', settings, DEFAULT_SETTINGS) //MS per tick
+    this._radiusMod = assignDefault('radiusMod', settings, DEFAULT_SETTINGS)
+    this._squishMod = assignDefault('squishMod', settings, DEFAULT_SETTINGS)
+    this._xMod = assignDefault('xMod', settings, DEFAULT_SETTINGS)
+    this._yMod = assignDefault('yMod', settings, DEFAULT_SETTINGS)
 
     this._curIntensity = this._runIntensity
 
@@ -215,7 +226,8 @@ function DottedImage(elementID, imgLink, settings = {})
     this._img = new Image()
     this._img.src = this._imgLnk
     this._img.onload = () => {
-        self.convertImg()
+        let bgColor = self.convertImg(this._useImageTopLeftAsBackground ? [0,0] : null)
+        if (bgColor !== null) this._color = bgColor
     }
 
     //Updates
@@ -260,7 +272,7 @@ DottedImage.prototype.redraw = function()
         this._dots.forEach(element => {
             if(element !== null)
             {
-                element.draw(this._context)
+                element.draw(this._context, this._radiusMod)
             }
         })
     }
@@ -305,7 +317,7 @@ DottedImage.prototype.changedMSPT = function()
  */
 DottedImage.prototype.updateSettings = function(settings = {})
 {
-    let resetAll = false, imgCng = false
+    let resetAll = false, imgCng = false, sizeCng = false
     if (settings.clickIntensity)
     {
         this._clickIntensity = settings.clickIntensity
@@ -336,6 +348,26 @@ DottedImage.prototype.updateSettings = function(settings = {})
         this._mspt = settings.mspt
         this.changedMSPT()
     }
+    if(settings.radiusMod)
+    {
+        this._radiusMod = settings.radiusMod
+    }
+    if(settings.squishMod)
+    {
+        this._squishMod = settings.squishMod
+        sizeCng = true
+    }
+    if(settings.xMod)
+    {
+        this._xMod = settings.xMod
+        sizeCng = true
+    }
+    if(settings.yMod)
+    {
+        this._yMod = settings.yMod
+        sizeCng = true
+    }
+
 
     if (resetAll)
     {
@@ -345,20 +377,36 @@ DottedImage.prototype.updateSettings = function(settings = {})
         }
         else
         {
-            this.convertImg()
+            let bgColor = this.convertImg(this._useImageTopLeftAsBackground ? [0,0] : null)
         }
+    }
+
+    if (sizeCng)
+    {
+        console.log(0, this._xMod, this._yMod)
+        this.updateSize()
     }
 }
 
 /**
  * Takes the currently loaded image and converts it to a bunch of dots.
+ * @param {xCoord, yCoord} bgColor A pixel to take for the background color. Leave null to not do this
+ * @returns The background color, if there is one
  */
-DottedImage.prototype.convertImg = function()
+DottedImage.prototype.convertImg = function(bgColor = null)
 {
     this.clearDots()
     this._hasAddedAllDots = false
 
     let pixels = getAllPixelsAsContinuousNumbersRepresentingEachColorElement(this._img)
+
+    let bg = null
+    if (bgColor !== null)
+    {
+        bg = getColorAtFromPixelsThing(bgColor[0], bgColor[1], pixels, this._img)
+        console.log(bg)
+        console.log(colorToStr(bg))
+    }
 
     /*
     dots = h/w(d) * d, dots = d^2h/w, dots*w/h = d^2, d = (dots*w/h)**.5, width/d = divider. Heck yeah math (<- that was cring)
@@ -379,7 +427,7 @@ DottedImage.prototype.convertImg = function()
             a = new Dot([startX,startY])
 
             //Color
-            let color = getAvgColorOfPixels(i*divider, j*divider, divider, divider, pixels, this._img)
+            let color = getAvgColorOfPixels(i*divider, j*divider, divider, divider, pixels, this._img, bg)
             if (color[3] === 0) this._dots.push(null) //Completely transparent dot.
             else
             {
@@ -390,6 +438,8 @@ DottedImage.prototype.convertImg = function()
     }
     this.resetHomes()
     this._hasAddedAllDots = true
+
+    return colorToStr(bg)
 }
 
 /**
@@ -401,7 +451,7 @@ DottedImage.prototype.resetHomes = function()
     let divider = this._divider
     let across = imgWidth/divider, vert = imgHeight/divider
     
-    let spacing = Math.min(this.width()/(across+1), this.height()/(vert+1))
+    let spacing = Math.min(this.width()/(across+1), this.height()/(vert+1)) * this._squishMod
     let radius = spacing/2
 
     let leftSpace = (this.width()-(across-1)*spacing)/2-radius
@@ -414,7 +464,10 @@ DottedImage.prototype.resetHomes = function()
             a = this._dots[i*Math.ceil(vert)+j]
             if (a !== null) 
             {
-                a.setHome([i*spacing+leftSpace, j*spacing+topSpace])
+                a.setHome([
+                    i*spacing+leftSpace + this._xMod, 
+                    j*spacing+topSpace + this._yMod
+                ])
                 a.setRadius(radius*a.getOpacity()/255)
             }
         }
@@ -540,27 +593,67 @@ function getColorAtFromPixelsThing(x, y, pixels, img)
  * @param {number} width 
  * @param {*} pixels The result of calling getAllPixelsAsContinuousNumbersRepresentingEachColorObject(img)
  * @param {*} img The image in question
+ * @param {color} bg The background color. Any pixel that matches this will be treated as fully transparent
  * @returns 
  */
-function getAvgColorOfPixels(x, y, height, width, pixels, img)
+function getAvgColorOfPixels(x, y, height, width, pixels, img, bg)
 {
     let color = [0,0,0,0]
-    cycles = 0
+    alphaCycle = 0
+    colorCycle = 0
     for (let i = Math.floor(x); i < width+x && i < img.width; i++)
     {
         for (let j = Math.floor(y); j < height+y && j < img.height; j++)
         {
             let c2 = getColorAtFromPixelsThing(i,j, pixels, img)
-            color[0] = color[0] + c2[0]
-            color[1] = color[1] + c2[1]
-            color[2] = color[2] + c2[2]
+
+            //treat bg as transparent
+            if (bg !== null)
+            {
+                if (bg[0] === c2[0] && bg[1] === c2[1] && bg[2] === c2[2]) c2[3] = 0
+            }
+
             color[3] = color[3] + c2[3]
-            cycles++
+            alphaCycle++
+
+            if (c2[3] !== 0) //only add this color if the pixel was not transparent
+            {
+                color[0] = color[0] + c2[0]
+                color[1] = color[1] + c2[1]
+                color[2] = color[2] + c2[2]
+                colorCycle++
+            }
         }
     }
-    color[0] = color[0] / cycles
-    color[1] = color[1] / cycles
-    color[2] = color[2] / cycles
-    color[3] = color[3] / cycles
+    if (colorCycle !== 0)
+    {
+        color[0] = color[0] / colorCycle
+        color[1] = color[1] / colorCycle
+        color[2] = color[2] / colorCycle
+    }
+    color[3] = color[3] / alphaCycle
     return color
+}
+
+/**
+ * Converts array color to str
+ * @param {color} color 
+ * @returns 
+ */
+function colorToStr(color)
+{
+    if (color === null) return null
+
+    let str = '#'
+    
+    let num = color[0]*256*256 + color[1]*256 + color[2]
+
+    let hex = num.toString(16);
+
+    while (hex.length < 6) { //6 for color 
+        hex = '0' + hex;
+    }
+
+    return str + hex
+
 }

@@ -22,6 +22,10 @@ let mspt = MSPT
 let color = BG_COLOR
 let bg_color = '#000000'
 let img_link = 'pusheen.png'
+let radiusMod = 1.0
+let squishMod = 1.0
+let xMod = 0.0
+let yMod = 0.0
 
 
 //Local storage
@@ -36,12 +40,36 @@ let img_link = 'pusheen.png'
     {
         mspt = localMSPT
     }
+    let localRadiusMod = localStorage.getItem('rad_mod')
+    if(localRadiusMod !== null)
+    {
+        radiusMod = parseFloat(localRadiusMod)
+    }
+    let localSquishMod = localStorage.getItem('squish_mod')
+    if(localSquishMod !== null)
+    {
+        squishMod = parseFloat(localSquishMod)
+    }
+    let localXMod = localStorage.getItem('x_mod')
+    if(localXMod !== null)
+    {
+        xMod = parseFloat(localXMod)
+    }
+    let localYMod = localStorage.getItem('y_mod')
+    if(localYMod !== null)
+    {
+        yMod = parseFloat(localYMod)
+    }
 }
 
 //THE THING !!!
 let dotted = new DottedImage('dot-image', img_link, settings = {
     maxDots: maxDots,
-    mspt: mspt
+    mspt: mspt,
+    radiusMod: radiusMod,
+    squishMod: squishMod,
+    xMod: xMod,
+    yMod: yMod
 })
 
 
@@ -63,7 +91,7 @@ document.getElementById('fileToLoad').addEventListener('change', ()=>{
 
     dots.onchange = function()
     {
-        maxDots = dots.value
+        maxDots = parseInt(dots.value)
         localStorage.setItem('max_dots', maxDots)
         dotted.updateSettings({
             maxDots: maxDots
@@ -84,7 +112,7 @@ document.getElementById('fileToLoad').addEventListener('change', ()=>{
 
     mspt_setting.onchange = function()
     {
-        mspt = mspt_setting.value
+        mspt = parseInt(mspt_setting.value)
         localStorage.setItem('mspt', mspt)
         dotted.updateSettings({
             mspt: mspt
@@ -104,5 +132,94 @@ document.getElementById('fileToLoad').addEventListener('change', ()=>{
         dotted.updateSettings({
             color: color
         })
+    }
+}
+
+//radius setting
+{
+    let rad = document.getElementById('rad_mod')
+    rad.value = radiusMod
+
+    function showRadiusMod()
+    {
+        document.getElementById('rad-mod-text').innerText = 'Radius Multiplier: ' + radiusMod
+    }
+    showRadiusMod()
+
+    rad.onchange = function()
+    {
+        radiusMod = parseFloat(rad.value)
+        localStorage.setItem('rad_mod', radiusMod)
+        dotted.updateSettings({
+            radiusMod: radiusMod
+        })
+        showRadiusMod()
+    }
+}
+
+//squishing setting
+{
+    let squish = document.getElementById('squish_mod')
+    squish.value = squishMod
+
+    function showSquishMod()
+    {
+        document.getElementById('squish-mod-text').innerText = 'Squish Factor: ' + squishMod
+    }
+    showSquishMod()
+
+    squish.onchange = function()
+    {
+        squishMod = parseFloat(squish.value)
+        localStorage.setItem('squish_mod', squishMod)
+        dotted.updateSettings({
+            squishMod: squishMod
+        })
+        showSquishMod()
+    }
+}
+
+
+//x setting
+{
+    let xMov = document.getElementById('x_mod')
+    xMov.value = xMod
+
+    function showXMod()
+    {
+        document.getElementById('x-mod-text').innerText = 'X + ' + xMod
+    }
+    showXMod()
+
+    xMov.onchange = function()
+    {
+        xMod = parseFloat(xMov.value)
+        localStorage.setItem('x_mod', xMod)
+        dotted.updateSettings({
+            xMod: xMod
+        })
+        showXMod()
+    }
+}
+
+//y setting
+{
+    let yMov = document.getElementById('y_mod')
+    yMov.value = yMod
+
+    function showYMod()
+    {
+        document.getElementById('y-mod-text').innerText = 'Y + ' + yMod
+    }
+    showYMod()
+
+    yMov.onchange = function()
+    {
+        yMod = parseFloat(yMov.value)
+        localStorage.setItem('y_mod', yMod)
+        dotted.updateSettings({
+            yMod: yMod
+        })
+        showYMod()
     }
 }
